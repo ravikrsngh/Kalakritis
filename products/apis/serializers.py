@@ -36,6 +36,11 @@ class ProductSerializer(serializers.ModelSerializer):
     colors = ColorsSerializer(many=True)
     tags = TagsSerializer(many=True)
     sizes = SizesSerializer(many=True)
+    discount_percent = serializers.SerializerMethodField()
+
+    def get_discount_percent(self, obj):
+        return int((obj.cost_price - obj.selling_price)*100/obj.cost_price)
+
     # def to_representation(self, instance):
     #     # Get the product images for the current product instance
     #     product_images = instance.product_images.all().order_by('order')
