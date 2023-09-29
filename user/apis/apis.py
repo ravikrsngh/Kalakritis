@@ -65,7 +65,7 @@ class UserAPI(viewsets.ModelViewSet):
                 return Response({"details":"Email Sent"})
             except Exception as e:
                 print(e)
-                return Response({"details":"Some error while sending OTP"})
+                return Response({"details":"Some error while sending OTP"}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['post'], detail=False)
     def set_new_password(self, request, pk=None):

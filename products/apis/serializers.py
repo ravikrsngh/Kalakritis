@@ -17,7 +17,7 @@ class ProductTypeSerializer(serializers.ModelSerializer):
 class ColorsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Colors
-        fields = ['id','name']
+        fields = ['id','name','hash_value']
 
 class TagsSerializer(serializers.ModelSerializer):
     class Meta:
