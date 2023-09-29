@@ -31,5 +31,5 @@ dist-ssr
 *.sln
 *.sw?
 
-media
+media/*
 db.sqlite3
