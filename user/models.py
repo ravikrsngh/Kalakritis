@@ -103,3 +103,15 @@ class Newsletter(models.Model):
     class Meta:
         verbose_name = "Newsletter"
         verbose_name_plural = "Newsletters"
+
+
+class TemperaryOTP(models.Model):
+    email = models.CharField(max_length=50,unique=True)
+    temp_otp = models.CharField(max_length=4)
+
+    def __str__(self):
+        return self.email
+
+    class Meta:
+        verbose_name = "Temperary OTP"
+        verbose_name_plural = "Temperary OTP"

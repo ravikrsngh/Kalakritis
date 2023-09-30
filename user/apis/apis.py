@@ -57,10 +57,10 @@ class UserAPI(viewsets.ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             try:
                 email = serializer.validated_data['email']
-                try:
+                if self.queryset.filter(email=serializer.validated_data['email']).exists():
                     instance = self.queryset.get(email=serializer.validated_data['email'])
-                except Exception as e:
-                    return Response({"details":"User does not exists."}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    instance = TemperaryOTP.objects.create(email=email)
                 otp = send_OTP_email(email)
                 instance.temp_otp = otp
                 instance.save()
@@ -68,6 +68,16 @@ class UserAPI(viewsets.ModelViewSet):
             except Exception as e:
                 print(e)
                 return Response({"details":"Some error while sending OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False)
+    def verify_otp_for_create(self,request):
+        serializer = VerifyOTPSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            if TemperaryOTP.objects.filter(email=serializer.validated_data['email']).filter(temp_otp=serializer.validated_data['otp']).exists():
+                TemperaryOTP.objects.filter(email=serializer.validated_data['email']).delete()
+                return Response({"details":"Verfied"})
+            else:
+                return Response({"details":"Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['post'], detail=False)
     def set_new_password(self, request, pk=None):
