@@ -44,8 +44,8 @@ class UserAPI(viewsets.ModelViewSet):
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        if not serializer.validated_data['password'] == serializer.validated_data['confirm_password']:
-            return Response({"details":"The passwords dont match."}, status=status.HTTP_400_BAD_REQUEST)
+        # if not serializer.validated_data['password'] == serializer.validated_data['confirm_password']:
+        #     return Response({"details":"The passwords dont match."}, status=status.HTTP_400_BAD_REQUEST)
         instance = serializer.save()
         self.set_password(instance, instance.password)
         instance_serializer = UserDetailsSerializer(instance)

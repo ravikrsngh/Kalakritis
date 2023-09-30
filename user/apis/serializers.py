@@ -7,8 +7,6 @@ from user.models import *
 
 class UserCreateSerializer(serializers.ModelSerializer):
 
-    confirm_password = serializers.CharField(max_length=16)
-
     def validate_password(self, value):
         print("Validating Password")
         if len(value) < 8:
