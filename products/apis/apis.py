@@ -116,11 +116,23 @@ class ProductAPI(viewsets.ModelViewSet):
         pt_serializer = ProductTypeSerializer(ProductTypes.objects.all(), many=True)
         color_serializer = ColorsSerializer(Colors.objects.all(), many=True)
         size_serializer = SizesSerializer(Sizes.objects.all(), many=True)
-        return Response({
-            "product_type":pt_serializer.data,
-            "colors":color_serializer.data,
-            "sizes":size_serializer.data
-        })
+        return Response([
+            {
+                "key":"product_type",
+                "name":"Product Type",
+                "values":pt_serializer.data
+            },
+            {
+                "key":"colors",
+                "name":"Color",
+                "values":color_serializer.data
+            },
+            {
+                "key":"sizes",
+                "name":"Size",
+                "values":size_serializer.data
+            }
+        ])
 
     # @action(methods=['get'], detail=False)
     # def get_popular_products(self,request):
