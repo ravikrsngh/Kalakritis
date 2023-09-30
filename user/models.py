@@ -106,7 +106,7 @@ class Newsletter(models.Model):
 
 
 class TemperaryOTP(models.Model):
-    email = models.CharField(max_length=50,unique=True)
+    email = models.CharField(max_length=50)
     temp_otp = models.CharField(max_length=4)
 
     def __str__(self):
