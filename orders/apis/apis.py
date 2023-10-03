@@ -60,7 +60,7 @@ class CartAPI(viewsets.ModelViewSet):
                     instance = Cart.objects.get(user=user,product=serializer.validated_data['product'],color=serializer.validated_data['color'],size=serializer.validated_data['size'])
                     instance.qty = instance.qty + 1
                     instance.save()
-                    return Response({"details":"Product was already in the cart. So we have increased the quantity by 1."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"details":"Product was already in the cart. So we have increased the quantity by 1."})
                 else:
                     instance = serializer.save()
                     return Response({"details":"Added to Cart"})
