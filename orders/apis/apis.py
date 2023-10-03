@@ -57,7 +57,10 @@ class CartAPI(viewsets.ModelViewSet):
             serializer=AddToCartSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 if Cart.objects.filter(user=user).filter(product=serializer.validated_data['product']).filter(color=serializer.validated_data['color']).filter(size=serializer.validated_data['size']).exists():
-                    return Response({"details":"Product already added to the cart"}, status=status.HTTP_400_BAD_REQUEST)
+                    instance = Cart.objects.get(user=user,product=serializer.validated_data['product'],color=serializer.validated_data['color'],size=serializer.validated_data['size'])
+                    instance.qty = instance.qty + 1
+                    instance.save()
+                    return Response({"details":"Product was already in the cart. So we have increased the quantity by 1."}, status=status.HTTP_400_BAD_REQUEST)
                 else:
                     instance = serializer.save()
                     return Response({"details":"Added to Cart"})

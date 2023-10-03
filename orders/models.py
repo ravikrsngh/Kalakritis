@@ -17,7 +17,7 @@ class Cart(models.Model):
     product = models.ForeignKey(Product,on_delete=models.CASCADE)
     qty = models.IntegerField(default=0)
     size = models.CharField(max_length=5)
-    color = models.CharField(max_length=7)
+    color = models.CharField(max_length=50)
 
     def __str__(self):
         return self.user.email

@@ -26,14 +26,14 @@ class ProductAdmin(SummernoteModelAdmin):
     inlines = [ProductImageInline]
     list_display = ('sku','title', 'cost_price', 'selling_price', 'product_type')
     search_fields = ['sku','title', 'product_type__name','tags__name']
-    summernote_fields = ('description','shipping_details','return_details','product_care')
+    summernote_fields = ('description','features','shipping_details','return_details','product_care')
     filter_horizontal = ('tags','colors','sizes')
     list_filter = ('product_type','tags','colors','sizes')
 
 
     fieldsets = (
         ('Product Info', {
-            'fields': ('sku','title','product_type','colors','sizes','cost_price','selling_price','description','shipping_details','return_details','product_care','avg_rating', 'total_reviews','tags')
+            'fields': ('sku','title','product_type','colors','sizes','cost_price','selling_price','description','features','shipping_details','return_details','product_care','avg_rating', 'total_reviews','tags')
         }),
     )
 
