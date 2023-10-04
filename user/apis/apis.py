@@ -1,3 +1,5 @@
+from typing import Any, Dict, Optional, Type, TypeVar
+
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -13,6 +15,7 @@ from services.emails import *
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -22,6 +25,11 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['fullname'] = f'{user.first_name} {user.last_name}'
 
         return token
+
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, str]:
+        data = super().validate(attrs)
+        data['user'] = self.user.id
+        return data
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer

@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 class CartAPI(viewsets.ModelViewSet):
     queryset = Cart.objects.all()
-    serializer_class = WishlistSerializer
+    serializer_class = CartDetailsSerializer
 
     def prepare_cart_data(self):
         response_data = {
@@ -66,11 +66,26 @@ class CartAPI(viewsets.ModelViewSet):
                     return Response({"details":"Added to Cart"})
         return Response({"details":"User is not logged in."}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['post'],detail=False)
+    def buy_now(self, request):
+        user = self.request.user
+        if user.is_authenticated:
+            Cart.objects.filter(user=user).delete()
+            request.data['user'] = user.id
+            serializer=AddToCartSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                instance = serializer.save()
+                return Response()
+        return Response({"details":"User is not logged in."}, status=status.HTTP_400_BAD_REQUEST)
+
 
     def list(self, request):
         user = self.request.user
         if user.is_authenticated:
             response = self.prepare_cart_data()
+            coupon_name = request.GET.get('coupon',None)
+            if coupon_name:
+                self.apply_coupon_code(response,coupon_name)
             return Response(response)
         return {}
 
@@ -79,30 +94,23 @@ class CartAPI(viewsets.ModelViewSet):
         instance = self.get_object()
         instance.qty = request.data['qty']
         instance.save()
-        response = self.prepare_cart_data()
-        return Response(response)
+        return Response()
 
 
     def destroy(self, request, pk=None):
         super().destroy(request, pk=None)
-        response = self.prepare_cart_data()
-        return Response(response)
+        return Response()
 
-
-    @action(methods=['post'], detail=False)
-    def apply_coupon_code(self, request):
-        response = self.prepare_cart_data()
-        coupon_name = request.data['coupon']
+    def apply_coupon_code(self,response, coupon_name):
         if CouponCodes.objects.filter(name__iexact=coupon_name).exists():
             coupon_instance = CouponCodes.objects.filter(name__iexact=coupon_name).first()
             response['coupon_details']['coupon_name'] = coupon_name
             response['coupon_details']['coupon_percent'] = coupon_instance.discount_perecent
             response['coupon_details']['coupon_discount'] = int((response['subtotal'] * response['coupon_details']['coupon_percent'])/100)
-            response['coupon_details']["coupon_success_message"] = f'{coupon_name} - Rs. {response["coupon_details"]["coupon_discount"]}/- off.'
+            response['coupon_details']["coupon_success_message"] = f'Coupon {coupon_name} applied - Rs. {response["coupon_details"]["coupon_discount"]}/- off.'
             response['total'] = response['total'] - response['coupon_details']['coupon_discount']
         else:
             response['coupon_details']["coupon_error_message"] = "Invalid coupon code."
-        return Response(response)
 
 
 class WishlistAPI(viewsets.ModelViewSet):
