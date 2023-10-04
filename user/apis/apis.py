@@ -29,6 +29,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, str]:
         data = super().validate(attrs)
         data['user'] = self.user.id
+        data["fullname"] = f'{self.user.first_name} {self.user.last_name}'
         return data
 
 class MyTokenObtainPairView(TokenObtainPairView):
