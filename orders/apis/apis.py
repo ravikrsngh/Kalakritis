@@ -139,3 +139,12 @@ class WishlistAPI(viewsets.ModelViewSet):
                 return Response({"details":"Added to wishlist"})
         else:
             return Response({"details":"User is not logged in."}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['get'], detail=False)
+    def get_product_ids(self, request):
+        user = self.request.user
+        if user.is_authenticated:
+            return Response({
+                "product_ids": Wishlist.objects.filter(user=user).values_list('product', flat=True)
+            })
+        return Response({"details":"User is not logged in."}, status=status.HTTP_400_BAD_REQUEST)
