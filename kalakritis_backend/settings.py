@@ -38,7 +38,8 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "kalakritis-dev.ap-south-1.elasticbeanstalk.com",
     "kalakritis.in",
-    "www.kalakritis.in"
+    "www.kalakritis.in",
+    "api.kalakritis.in"
 ]
 
 
