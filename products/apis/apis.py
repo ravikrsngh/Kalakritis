@@ -6,7 +6,10 @@ from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework.pagination import PageNumberPagination
 from django_filters import rest_framework as filters
 from datetime import datetime, timedelta
-from django.db.models import Case, When, BooleanField, Value
+from django.db.models import Case, When, BooleanField, Value, Exists, OuterRef
+
+
+from orders.models import *
 
 class ProductFilter(filters.FilterSet):
     tags = filters.ModelMultipleChoiceFilter(
@@ -91,10 +94,8 @@ class ProductAPI(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
-            queryset = Product.objects.annotate(is_wishlisted=Case(
-                When(wishlist_products__user=self.request.user, then=Value(True)),
-                default=Value(False),
-                output_field=BooleanField(),
+            queryset = Product.objects.annotate(is_wishlisted=Exists(
+                Wishlist.objects.filter(product=OuterRef('pk'), user=self.request.user)
             )).select_related('product_type').prefetch_related('colors').prefetch_related('sizes').prefetch_related('tags').prefetch_related("product_images")
         else:
             queryset = Product.objects.annotate(is_wishlisted=Value(False)).select_related('product_type').prefetch_related('colors').prefetch_related('sizes').prefetch_related('tags').prefetch_related("product_images")
