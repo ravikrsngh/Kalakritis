@@ -37,6 +37,7 @@ class ProductSerializer(serializers.ModelSerializer):
     tags = TagsSerializer(many=True)
     sizes = SizesSerializer(many=True)
     discount_percent = serializers.SerializerMethodField()
+    is_wishlisted = serializers.BooleanField(read_only=True)
 
     def get_discount_percent(self, obj):
         return int((obj.cost_price - obj.selling_price)*100/obj.cost_price)

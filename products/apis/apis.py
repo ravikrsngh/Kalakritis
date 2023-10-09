@@ -24,13 +24,13 @@ class ProductFilter(filters.FilterSet):
         field_name='colors__name',
         to_field_name='name',
         queryset=Colors.objects.all(),
-        conjoined=False
+        conjoined=True
     )
     sizes = filters.ModelMultipleChoiceFilter(
         field_name='sizes__name',
         to_field_name='name',
         queryset=Sizes.objects.all(),
-        conjoined=False
+        conjoined=True
     )
     selling_price = filters.RangeFilter()
 
@@ -40,7 +40,7 @@ class ProductFilter(filters.FilterSet):
 
 
 class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 6
+    page_size = 18
     page_query_param = 'page'
     max_page_size = 1000
 
@@ -90,15 +90,15 @@ class ProductAPI(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        queryset = Product.objects.select_related('product_type').prefetch_related('colors').prefetch_related('sizes').prefetch_related('tags').prefetch_related("product_images")
         if self.request.user.is_authenticated:
-            queryset.annotate(is_wishlisted=Case(
+            queryset = Product.objects.annotate(is_wishlisted=Case(
                 When(wishlist_products__user=self.request.user, then=Value(True)),
                 default=Value(False),
                 output_field=BooleanField(),
-            ))
+            )).select_related('product_type').prefetch_related('colors').prefetch_related('sizes').prefetch_related('tags').prefetch_related("product_images")
         else:
-            queryset.annotate(is_wishlisted=Value(False))
+            queryset = Product.objects.annotate(is_wishlisted=Value(False)).select_related('product_type').prefetch_related('colors').prefetch_related('sizes').prefetch_related('tags').prefetch_related("product_images")
+        print(queryset[0].is_wishlisted)
         return queryset
 
 
