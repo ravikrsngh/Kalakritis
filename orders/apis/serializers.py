@@ -12,6 +12,12 @@ class WishlistSerializer(serializers.ModelSerializer):
 
 class WishlistDetailsSerializer(serializers.ModelSerializer):
     product = ProductSerializer(many=False)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['product']['is_wishlisted'] = True
+        return data
+
     class Meta:
         model = Wishlist
         fields = ['id','product']
@@ -28,3 +34,7 @@ class CartDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
         exclude = ['user']
+
+
+class GetPaymentLinkSerializer(serializers.Serializer):
+    amount = serializers.IntegerField()

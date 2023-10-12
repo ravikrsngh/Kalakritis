@@ -8,8 +8,8 @@ from django_filters import rest_framework as filters
 from datetime import datetime, timedelta
 from django.db.models import Case, When, BooleanField, Value, Exists, OuterRef
 
-
 from orders.models import *
+from rest_framework.permissions import AllowAny
 
 class ProductFilter(filters.FilterSet):
     tags = filters.ModelMultipleChoiceFilter(
@@ -91,6 +91,7 @@ class ProductAPI(viewsets.ModelViewSet):
     ordering_fields = ['id', 'selling_price']
     ordering = ['-id']
     pagination_class = StandardResultsSetPagination
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
@@ -99,7 +100,6 @@ class ProductAPI(viewsets.ModelViewSet):
             )).select_related('product_type').prefetch_related('colors').prefetch_related('sizes').prefetch_related('tags').prefetch_related("product_images")
         else:
             queryset = Product.objects.annotate(is_wishlisted=Value(False)).select_related('product_type').prefetch_related('colors').prefetch_related('sizes').prefetch_related('tags').prefetch_related("product_images")
-        print(queryset[0].is_wishlisted)
         return queryset
 
 

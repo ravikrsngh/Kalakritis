@@ -6,11 +6,21 @@ from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework.pagination import PageNumberPagination
 from django_filters import rest_framework as filters
 from datetime import datetime, timedelta
+from rest_framework.permissions import IsAuthenticated
+from converters import *
+from utils import *
+import requests
+import environ
+
+
+environ.Env.read_env()
+env = environ.Env()
 
 
 class CartAPI(viewsets.ModelViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartDetailsSerializer
+    permission_classes = [IsAuthenticated]
 
     def prepare_cart_data(self):
         response_data = {
@@ -31,12 +41,15 @@ class CartAPI(viewsets.ModelViewSet):
         queryset = self.get_queryset()
         serializer = CartDetailsSerializer(queryset, many=True)
         response_data['cart_items'] = serializer.data
-        response_data['no_of_items'] = len(response_data['cart_items'])
-        #Calculate subtotal
+
+        #Calculate subtotal and no of items
         subtotal = 0
+        no_of_items = 0
         for cart_item in response_data['cart_items']:
             subtotal += cart_item["product"]["selling_price"] * cart_item['qty']
+            no_of_items += cart_item['qty']
 
+        response_data['no_of_items'] = no_of_items
         response_data['subtotal'] = subtotal
         response_data['tax'] = int((subtotal * 18)/100)
         response_data['total'] = response_data['subtotal'] + response_data['tax']
@@ -116,6 +129,7 @@ class CartAPI(viewsets.ModelViewSet):
 class WishlistAPI(viewsets.ModelViewSet):
     queryset = Wishlist.objects.all()
     serializer_class = WishlistSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -132,7 +146,7 @@ class WishlistAPI(viewsets.ModelViewSet):
         if user is not None:
             request.data['user'] = user.id
             if Wishlist.objects.filter(user=user).filter(product=request.data['product']).exists():
-                return Response({"details":"Product already added to the wishlist."})
+                return Response({"details":"Product already added to the wishlist."}, status=status.HTTP_400_BAD_REQUEST)
             serializer = WishlistSerializer(data = request.data)
             if serializer.is_valid(raise_exception=True):
                 instance = serializer.save()
@@ -148,3 +162,73 @@ class WishlistAPI(viewsets.ModelViewSet):
                 "product_ids": Wishlist.objects.filter(user=user).values_list('product', flat=True)
             })
         return Response({"details":"User is not logged in."}, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, pk=None):
+        Wishlist.objects.filter(user=self.request.user).filter(product__id=pk).delete()
+        return Response()
+
+
+class PhonePeAPI(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+
+        serializer = GetPaymentLinkSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+
+            merchantTransactionId = generate_random_string(8)
+
+            base_url = env('BASE_URL_FOR_REDIRECT')
+            callbackUrl = base_url + "/phonepe-callback-url/"
+
+            payload_for_base64 = {
+              "merchantId": env('MID'),
+              "merchantTransactionId": merchantTransactionId,
+              "merchantUserId": request.user.id,
+              "amount": serializer.validated_data['amount']*100,
+              "redirectUrl": base_url + "/phonepe-redirect-url/"+merchantTransactionId+'/',
+              "redirectMode": "GET",
+              "callbackUrl": callbackUrl,
+              "mobileNumber": request.user.phone_number,
+              "paymentInstrument": {
+                "type": "PAY_PAGE"
+              }
+            }
+
+            url = env('INITIATE_PAY_URL')
+            payload = {
+                "request": dict_to_base64(payload_for_base64)
+            }
+            headers = {
+                "Content-Type":"application/json",
+                "X-VERIFY": toSHA256(payload['request']+'/pg/v1/pay'+env('SALT_KEY')) + "###"+ env('SALT_INDEX')
+            }
+
+            response = requests.post(url, headers=headers, json=payload)
+
+            print(response.headers)
+
+            return Response(response.json()['data']['instrumentResponse'])
+
+    @action(detail=False, methods=['post'])
+    def check_transaction_status(self, request):
+        trx_id = request.data.get('trx_id', None)
+        if trx_id is not None:
+
+            check_status_url = env('CHECKSTATUS_URL')+ "/" + env('MID')+ "/" + trx_id
+            print(check_status_url)
+            headers = {
+                "Content-Type":"application/json",
+                "X-VERIFY": toSHA256(f"/pg/v1/status/{env('MID')}/{trx_id}"+env('SALT_KEY')) + "###"+ env('SALT_INDEX'),
+                "X-MERCHANT-ID":env('MID')
+            }
+
+            response = requests.get(check_status_url, headers=headers)
+
+            print(response.headers)
+            res = response.json()
+            del res['data']['merchantId']
+            return Response(res)
+
+        else:
+            return Response({"details":"Transaction ID not found"}, status=status.HTTP_400_BAD_REQUEST)
