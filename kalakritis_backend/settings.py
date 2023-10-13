@@ -39,7 +39,7 @@ ALLOWED_HOSTS = [
     "kalakritis-dev.ap-south-1.elasticbeanstalk.com",
     "kalakritis.in",
     "www.kalakritis.in",
-    "api.kalakritis.in"
+    "api.kalakritis.in",
 ]
 
 

@@ -210,9 +210,10 @@ class PhonePeAPI(viewsets.ViewSet):
 
             return Response(response.json()['data']['instrumentResponse'])
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['get'])
     def check_transaction_status(self, request):
-        trx_id = request.data.get('trx_id', None)
+        trx_id = request.GET.get('transactionId', None)
+        print(trx_id)
         if trx_id is not None:
 
             check_status_url = env('CHECKSTATUS_URL')+ "/" + env('MID')+ "/" + trx_id
@@ -225,11 +226,13 @@ class PhonePeAPI(viewsets.ViewSet):
 
             response = requests.get(check_status_url, headers=headers)
 
-            print(response.headers)
-            res = response.json()
-            res['details'] = "Order has been created"
-            del res['data']['merchantId']
-            return Response(res)
+            try:
+                res = response.json()
+                res['details'] = "Order has been created"
+                del res['data']['merchantId']
+                return Response(res)
+            except Exception as e:
+                return Response({"details":"Some error happenned while checking the transaction status."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"details":"Transaction ID not found"}, status=status.HTTP_400_BAD_REQUEST)
 
