@@ -186,7 +186,7 @@ class PhonePeAPI(viewsets.ViewSet):
               "merchantTransactionId": merchantTransactionId,
               "merchantUserId": request.user.id,
               "amount": serializer.validated_data['amount']*100,
-              "redirectUrl": base_url + "/phonepe-redirect-url/"+merchantTransactionId+'/',
+              "redirectUrl": base_url + "/payment?transactionId="+merchantTransactionId+'/',
               "redirectMode": "GET",
               "callbackUrl": callbackUrl,
               "mobileNumber": request.user.phone_number,
@@ -227,9 +227,9 @@ class PhonePeAPI(viewsets.ViewSet):
 
             print(response.headers)
             res = response.json()
+            res['details'] = "Order has been created"
             del res['data']['merchantId']
             return Response(res)
-
         else:
             return Response({"details":"Transaction ID not found"}, status=status.HTTP_400_BAD_REQUEST)
 
