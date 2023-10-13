@@ -169,49 +169,84 @@ class WishlistAPI(viewsets.ModelViewSet):
 
 
 class PhonePeAPI(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
+
+    def create_order(self, request):
+        user = self.request.user
+        ordered_products = request.data.pop('ordered_products')
+        merchantTransactionId = generate_random_string(8)
+        request.data['user'] = user.id
+        request.data['orderID'] = merchantTransactionId
+        order_serializer = OrderSerializer(data=request.data)
+        if order_serializer.is_valid(raise_exception=True):
+            order_instance = order_serializer.save()
+            for ordered_product in ordered_products:
+                ordered_product['order'] = order_instance.id
+                ordered_product_serializer = OrderProductSerializer(data=ordered_product)
+                try:
+                    if ordered_product_serializer.is_valid(raise_exception=True):
+                        ordered_product_instance = ordered_product_serializer.save()
+                except Exception as e:
+                    order_instance.delete()
+                    raise
+            return order_instance
+
+
+    def fetch_payment_link_phonepe(self, request, merchantTransactionId, amount):
+
+        base_url = env('BASE_URL_FOR_REDIRECT')
+        callbackUrl = "https://api.kalakritis.in/api/payment/callback/"
+
+        payload_for_base64 = {
+          "merchantId": env('MID'),
+          "merchantTransactionId": merchantTransactionId,
+          "merchantUserId": request.user.id,
+          "amount": amount*100,
+          "redirectUrl": base_url + "/payment?transactionId="+merchantTransactionId+'/',
+          "redirectMode": "GET",
+          "callbackUrl": callbackUrl,
+          "mobileNumber": request.user.phone_number,
+          "paymentInstrument": {
+            "type": "PAY_PAGE"
+          }
+        }
+
+        url = env('INITIATE_PAY_URL')
+        payload = {
+            "request": dict_to_base64(payload_for_base64)
+        }
+        headers = {
+            "Content-Type":"application/json",
+            "X-VERIFY": toSHA256(payload['request']+'/pg/v1/pay'+env('SALT_KEY')) + "###"+ env('SALT_INDEX')
+        }
+
+        response = requests.post(url, headers=headers, json=payload)
+        return response
+
 
     def create(self, request):
 
-        serializer = GetPaymentLinkSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
+        if not self.request.user.is_authenticated:
+            return Response({"details":"Unauthorized User"}, status=status.HTTP_400_BAD_REQUEST)
 
-            merchantTransactionId = generate_random_string(8)
+        #Create Order
+        ins = self.create_order(request)
 
-            base_url = env('BASE_URL_FOR_REDIRECT')
-            callbackUrl = base_url + "/phonepe-callback-url/"
+        #Fetch Payment link
+        response = self.fetch_payment_link_phonepe(request, ins.orderID, ins.total)
 
-            payload_for_base64 = {
-              "merchantId": env('MID'),
-              "merchantTransactionId": merchantTransactionId,
-              "merchantUserId": request.user.id,
-              "amount": serializer.validated_data['amount']*100,
-              "redirectUrl": base_url + "/payment?transactionId="+merchantTransactionId+'/',
-              "redirectMode": "GET",
-              "callbackUrl": callbackUrl,
-              "mobileNumber": request.user.phone_number,
-              "paymentInstrument": {
-                "type": "PAY_PAGE"
-              }
-            }
+        print(response.headers)
 
-            url = env('INITIATE_PAY_URL')
-            payload = {
-                "request": dict_to_base64(payload_for_base64)
-            }
-            headers = {
-                "Content-Type":"application/json",
-                "X-VERIFY": toSHA256(payload['request']+'/pg/v1/pay'+env('SALT_KEY')) + "###"+ env('SALT_INDEX')
-            }
+        return Response(response.json()['data']['instrumentResponse'])
 
-            response = requests.post(url, headers=headers, json=payload)
 
-            print(response.headers)
-
-            return Response(response.json()['data']['instrumentResponse'])
 
     @action(detail=False, methods=['get'])
     def check_transaction_status(self, request):
+
+        if not self.request.user.is_authenticated:
+            return Response({"details":"Unauthorized User"}, status=status.HTTP_400_BAD_REQUEST)
+
         trx_id = request.GET.get('transactionId', None)
         print(trx_id)
         if trx_id is not None:
@@ -237,10 +272,23 @@ class PhonePeAPI(viewsets.ViewSet):
             return Response({"details":"Transaction ID not found"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+    @action(detail=False, methods=['post'])
+    def callback(self, request):
+        print("Inside CallBack")
+        base64_tkn = request.data.get('response')
+        response = base64_to_dict(base64_tkn)
+        print(response)
+        return Response({"Hello"})
+
+
 class OrderAPI(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return OrderDetailsSerializer
 
     def create(self, request):
         user = self.request.user
