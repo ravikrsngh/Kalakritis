@@ -240,7 +240,6 @@ class PhonePeAPI(viewsets.ViewSet):
         return Response(response.json()['data']['instrumentResponse'])
 
 
-
     @action(detail=False, methods=['get'])
     def check_transaction_status(self, request):
 
@@ -277,8 +276,10 @@ class PhonePeAPI(viewsets.ViewSet):
         print("Inside CallBack")
         base64_tkn = request.data.get('response')
         response = base64_to_dict(base64_tkn)
-        print(response)
-        return Response({"Hello"})
+        if response['success'] :
+            orderID = response['data']['merchantTransactionId']
+            Order.objects.filter(orderID=orderID).update(payment_status=True).update(paymentID=response['data']['transactionId'])
+        return Response({})
 
 
 class OrderAPI(viewsets.ModelViewSet):
@@ -286,8 +287,11 @@ class OrderAPI(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user)
+
     def get_serializer_class(self):
-        if self.action == "list":
+        if self.action == "list" or self.action == "retrieve":
             return OrderDetailsSerializer
 
     def create(self, request):
