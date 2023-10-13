@@ -44,7 +44,7 @@ class Order(models.Model):
     zipcode = models.CharField(max_length=10)
     phone_number = models.CharField(max_length=15)
     subtotal = models.IntegerField(default=0)
-    coupon_name = models.CharField(max_length=8, default="XXXX")
+    coupon_name = models.CharField(max_length=8, default="XXXX", null=True)
     coupon_discount = models.IntegerField(default=0)
     delivery_charges = models.IntegerField(default=0)
     tax = models.IntegerField(default=0)
