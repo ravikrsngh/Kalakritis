@@ -283,7 +283,8 @@ class PhonePeAPI(viewsets.ViewSet):
         response = base64_to_dict(base64_tkn)
         if response['success'] :
             orderID = response['data']['merchantTransactionId']
-            Order.objects.filter(orderID=orderID).update(payment_status=True).update(paymentID=response['data']['transactionId'])
+            orders = Order.objects.filter(orderID=orderID)
+            orders.update(payment_status=True, paymentID=response['data']['transactionId'])
         return Response({})
 
 
