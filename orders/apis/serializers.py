@@ -38,3 +38,17 @@ class CartDetailsSerializer(serializers.ModelSerializer):
 
 class GetPaymentLinkSerializer(serializers.Serializer):
     amount = serializers.IntegerField()
+
+
+class OrderProductSerializer(serializers.ModelSerializer):
+    size = serializers.CharField(max_length=5, required=True)
+    color = serializers.CharField(max_length=50, required=True)
+    class Meta:
+        model = OrderProduct
+        fields = '__all__'
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        exclude = ['created_date']

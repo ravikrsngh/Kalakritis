@@ -7,4 +7,5 @@ router = routers.SimpleRouter()
 router.register(r'cart', CartAPI)
 router.register(r'wishlist', WishlistAPI)
 router.register(r'payment', PhonePeAPI, basename='payment')
+router.register(r'order', OrderAPI)
 urlpatterns = router.urls

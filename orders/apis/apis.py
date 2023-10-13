@@ -232,3 +232,29 @@ class PhonePeAPI(viewsets.ViewSet):
 
         else:
             return Response({"details":"Transaction ID not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class OrderAPI(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        user = self.request.user
+        ordered_products = request.data.pop('ordered_products')
+        request.data['user'] = user.id
+        order_serializer = OrderSerializer(data=request.data)
+        if order_serializer.is_valid(raise_exception=True):
+            order_instance = order_serializer.save()
+            for ordered_product in ordered_products:
+                ordered_product['order'] = order_instance.id
+                ordered_product_serializer = OrderProductSerializer(data=ordered_product)
+                try:
+                    if ordered_product_serializer.is_valid(raise_exception=True):
+                        ordered_product_instance = ordered_product_serializer.save()
+                    Cart.objects.filter(user=user).delete()
+                except Exception as e:
+                    order_instance.delete()
+                    raise
+
+        return Response({"details":"Order created."})
