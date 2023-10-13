@@ -235,7 +235,7 @@ class PhonePeAPI(viewsets.ViewSet):
         #Fetch Payment link
         response = self.fetch_payment_link_phonepe(request, ins.orderID, ins.total)
 
-        print(response.headers)
+        print(response.status_code)
 
         return Response(response.json()['data']['instrumentResponse'])
 

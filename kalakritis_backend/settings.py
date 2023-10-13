@@ -40,6 +40,7 @@ ALLOWED_HOSTS = [
     "kalakritis.in",
     "www.kalakritis.in",
     "api.kalakritis.in",
+    "172.31.10.52"
 ]
 
 
