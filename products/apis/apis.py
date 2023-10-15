@@ -85,8 +85,8 @@ class StandardResultsSetPagination(PageNumberPagination):
             'html_context': html_context,
             'total_pages':self.page.paginator.num_pages,
             'links': {
-                'next': self.get_next_link().split("api")[2],
-                'previous': self.get_previous_link().split("api")[2]
+                'next': html_context['next_url'],
+                'previous': html_context['previous_url']
             },
             'count': self.page.paginator.count,
             'results': data
