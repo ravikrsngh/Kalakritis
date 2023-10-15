@@ -65,7 +65,7 @@ class StandardResultsSetPagination(PageNumberPagination):
         for i,tu in enumerate(self.get_html_context()["page_links"]):
             each_page = []
             if tu[1] in l:
-                each_page.append(tu[0].split("api")[1])
+                each_page.append(tu[0].split("api")[2])
                 each_page.append(tu[1])
                 each_page.append(tu[2])
                 each_page.append(tu[3])
@@ -74,14 +74,19 @@ class StandardResultsSetPagination(PageNumberPagination):
 
         html_context = self.get_html_context()
         html_context["page_links"] = new_page_links
+        if html_context['next_url']:
+            html_context['next_url'] = html_context['next_url'].split("api")[2]
+        if html_context['previous_url']:
+            html_context['previous_url'] = html_context['previous_url'].split("api")[2]
+
 
 
         return Response({
             'html_context': html_context,
             'total_pages':self.page.paginator.num_pages,
             'links': {
-                'next': self.get_next_link(),
-                'previous': self.get_previous_link()
+                'next': self.get_next_link().split("api")[2],
+                'previous': self.get_previous_link().split("api")[2]
             },
             'count': self.page.paginator.count,
             'results': data
