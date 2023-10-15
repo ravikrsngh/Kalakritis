@@ -112,15 +112,16 @@ class ProductImages(models.Model):
 
 class Review(models.Model):
     user = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
-    product = models.ForeignKey(Product,on_delete=models.CASCADE)
+    product = models.ForeignKey(Product,on_delete=models.CASCADE, related_name="product_reviews")
     review = models.CharField(max_length=150)
+    rating = models.IntegerField(default=5)
 
     def __str__(self):
-        return self.name
+        return self.product.sku
 
     class Meta:
-        verbose_name = "Review"
-        verbose_name_plural = "Reviews"
+        verbose_name = "Product Review"
+        verbose_name_plural = "Product Reviews"
 
 
 def reviewimage_directory_path(instance,filename):
@@ -132,8 +133,8 @@ class ReviewImages(models.Model):
     img = models.ImageField(upload_to = reviewimage_directory_path)
 
     def __str__(self):
-        return self.name
+        return self.review.product.sku
 
     class Meta:
-        verbose_name = "Review"
-        verbose_name_plural = "Reviews"
+        verbose_name = "Product Review Images"
+        verbose_name_plural = "Product Review Images"

@@ -281,6 +281,24 @@ class ProductAdmin(SummernoteModelAdmin):
     #     js = ("products/products_changelist.js",)
 
 
+
+class ReviewImageInline(admin.TabularInline):
+    model = ReviewImages
+    extra = 0
+    verbose_name = "Product Review Image"
+    verbose_name_plural = "Product Review Images"
+    fields = ('img',)
+
+
+class ReviewAdmin(admin.ModelAdmin):
+    inlines = [ReviewImageInline]
+    readonly_fields = ()
+    list_display = ['user','product']
+    list_filter = ('product',)
+    summernote_fields = ('review')
+
+
+admin.site.register(Review,ReviewAdmin)
 admin.site.register(Product,ProductAdmin)
 admin.site.register(ProductImages)
 admin.site.register(ProductTypes)

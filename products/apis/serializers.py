@@ -58,3 +58,20 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
+
+
+class ReviewImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewImages
+        fields = ['img']
+
+class ReviewSerializer(serializers.ModelSerializer):
+    reviewimages_set = ReviewImageSerializer(many=True,required=False)
+
+    class Meta:
+        model = Review
+        exclude = ('product','user')
+
+
+class ProductDetailsWithReviewSerializer(ProductSerializer):
+    product_reviews = ReviewSerializer(many=True)

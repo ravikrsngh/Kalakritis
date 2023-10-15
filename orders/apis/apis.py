@@ -197,17 +197,12 @@ class PhonePeAPI(viewsets.ViewSet):
         base_url = env('BASE_URL_FOR_REDIRECT')
         callbackUrl = "https://api.kalakritis.in/api/payment/callback/"
 
-        domain = request.META['HTTP_HOST']
-        protocol = request.META['wsgi.url_scheme']
-        full_url = protocol + '://' + domain
-
-
         payload_for_base64 = {
           "merchantId": env('MID'),
           "merchantTransactionId": merchantTransactionId,
           "merchantUserId": request.user.id,
           "amount": amount*100,
-          "redirectUrl": full_url + "/payment?transactionId="+merchantTransactionId,
+          "redirectUrl": base_url + "/payment?transactionId="+merchantTransactionId,
           "redirectMode": "GET",
           "callbackUrl": callbackUrl,
           "mobileNumber": request.user.phone_number,

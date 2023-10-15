@@ -63,8 +63,14 @@ class StandardResultsSetPagination(PageNumberPagination):
 
         new_page_links = []
         for i,tu in enumerate(self.get_html_context()["page_links"]):
+            each_page = []
             if tu[1] in l:
-                new_page_links.append(tu)
+                each_page.append(tu[0].split("api")[1])
+                each_page.append(tu[1])
+                each_page.append(tu[2])
+                each_page.append(tu[3])
+                new_page_links.append(each_page)
+                print(tu)
 
         html_context = self.get_html_context()
         html_context["page_links"] = new_page_links
@@ -101,6 +107,12 @@ class ProductAPI(viewsets.ModelViewSet):
         else:
             queryset = Product.objects.annotate(is_wishlisted=Value(False)).select_related('product_type').prefetch_related('colors').prefetch_related('sizes').prefetch_related('tags').prefetch_related("product_images")
         return queryset
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            print("retrieve action")
+            return ProductDetailsWithReviewSerializer
+        return ProductSerializer
 
 
     @action(methods=['get'], detail=True)
@@ -157,3 +169,30 @@ class ProductAPI(viewsets.ModelViewSet):
     #     }
     #     r = requests.post(url = end_point, json = data)
     #     return Response(r.json())
+
+
+class ReviewAPI(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    #parser_classes = [MultiPartParser, FormParser]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # Get the files from the request
+        images = request.data.getlist('review_images')
+        print(images)
+
+        # Save the object with the file attachments
+        self.perform_create(serializer, images)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer, images):
+        # Save the object
+        instance = serializer.save()
+
+        # Save the images to a separate model
+        for image in images:
+            ReviewImage.objects.create(review=instance, img=image)
