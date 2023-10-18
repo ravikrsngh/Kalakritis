@@ -280,6 +280,8 @@ class PhonePeAPI(viewsets.ViewSet):
             orderID = response['data']['merchantTransactionId']
             orders = Order.objects.filter(orderID=orderID)
             orders.update(payment_status=True, paymentID=response['data']['transactionId'])
+            order = orders.first()
+            Cart.objects.filter(user=order.user).delete()
         return Response({})
 
 
